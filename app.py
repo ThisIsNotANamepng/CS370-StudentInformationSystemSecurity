@@ -45,6 +45,8 @@ def get_db_connection():
 @app.route('/')
 def index():
     # Render homepage
+
+    return render_template('index.html')
     pass
 
 @app.route('/login', methods=['GET', 'POST'])
