@@ -46,8 +46,9 @@ def get_db_connection():
 def index():
     # Render homepage
 
-    return render_template('index.html')
-    pass
+    test_data = "Hello, World!" #This data would be pulled from the sql database
+
+    return render_template('index.html', data=test_data)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
