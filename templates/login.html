@@ -1,11 +1,156 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
-</head>
-<body>
-    
-</body>
+    <head>
+        <link rel="icon" type="image/x-icon" href="/static/images/PersonIcon.png">
+        <meta charset="utf-8">
+        <style>
+            *{
+                margin:0;
+                padding:0;
+                font-family:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+            }
+            .content{
+                height: 100vh;
+                width: 100vw;
+                text-align: center;
+                display: grid;
+                grid-gap: 1vw;
+                grid-template-areas: 
+                "a b"
+                "a c"
+                "a d";
+            }
+            #sidemenu a:hover{
+                background-color: gray;
+            }
+            #sidemenu{
+                grid-area: a;
+                background-color: #333;
+                width: 24vw;
+                height: 100%;
+            }
+            #sidemenu a{
+                color: white;
+                text-decoration: none;
+                padding: 15px;
+                display: block;
+                text-align: center;
+            }
+            #maincontent{
+                background-color: white;
+                width: 80%;
+                height: 90vh;
+                float: right;
+            }
+            .footer{
+                grid-area: d;
+                background-color: white;
+                color: black;
+                width: 75vw;
+                height:5vh;
+                float:right;
+                text-align: center;
+            }
+            #h1{
+                grid-area: b;
+                height: 10vh;
+                width: 75vw;
+                text-align: left;
+                font-size: xxx-large;
+                font-weight: bold;
+                display: flex;
+                align-items: center;
+                color: rgb(0, 0, 0);
+
+            }
+            .information{
+                grid-area: c;
+                height:80vh;
+                text-align: left;
+                color: darkslateblue;
+                padding-left: 10px;
+                font-size: x-large;
+            }
+            .img{
+                float:left;
+                padding-right: 15px;
+            }
+            .imgright{
+                float:right;
+                padding-left: 15px;
+                padding-right: 35px;
+            }
+            
+        </style>
+    </head>
+    <body>
+    <div class="content">
+        <div id="sidemenu">
+            <ul>
+                <BR>
+                {% if session.get('user') %}
+                <li style="font-size: x-large; color: white;"> <a href="{{ url_for('logout') }}"> {{ session.get('user') }} <BR><BR> <img height="100px" src="/static/images/PersonIcon.png"> </a></li>
+                {% else %}
+                <li style="font-size: x-large; color: white;"> <a href="/login" style="background-color: white; color:#333"> Login <BR><BR> <img height="100px" src="/static/images/PersonIcon.png"> </a></li>
+                {% endif %}
+                {% if session.get('role') == 'faculty' %}
+                <li> <a href="/new_account">New Account</a> </li>
+                {% endif %}
+                <li> <a href="/">Index</a> </li>
+                <li> <a href="/faculty_update">Faculty Update</a> </li>
+                <li> <a href="/student_edit">Student Edit</a> </li>
+            </ul>
+        </div>
+
+        <div id="h1">
+            Login
+        </div>
+
+        <div class="information">
+            <div class="img">
+                <body>
+
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <ul>
+                        {% for category, msg in messages %}
+                            <li>{{ msg }}</li>
+                        {% endfor %}
+                        </ul>
+                    {% endif %}
+                    {% endwith %}
+                    <form action="{{ url_for('login') }}" method="post">
+                        <div>
+                            <label for="username">Username:</label>
+                            <input type="text" id="username" name="username" placeholder="Enter your username" required>
+                        </div>
+                        <BR>
+                        <div>
+                            <label for="password">Password:</label>
+                            <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                        </div>
+                        <BR>
+                        <div>
+                            <button type="submit">Login</button>
+                        </div>
+                        <BR>
+                        <p><a href="new_account" style="font-size: medium">Create New Account</a></p>
+                    </form>
+                
+                </body>
+            </div>
+            
+            <div class="imgright">
+                
+            </div>
+            
+            
+            
+        </div>
+
+       <footer class="footer">
+        <p> </p>
+       </footer>
+    </div>
+    </body>
 </html>

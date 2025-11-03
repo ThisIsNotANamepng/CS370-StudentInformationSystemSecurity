@@ -1,11 +1,155 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Faculty Update Data</title>
-</head>
-<body>
-    
-</body>
+    <head>
+        <link rel="icon" type="image/x-icon" href="/static/static/images/PersonIcon.png">
+        <meta charset="utf-8">
+        <style>
+            *{
+                margin:0;
+                padding:0;
+                font-family:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+            }
+            .content{
+                height: 100vh;
+                width: 100vw;
+                text-align: center;
+                display: grid;
+                grid-gap: 1vw;
+                grid-template-areas: 
+                "a b"
+                "a c"
+                "a d";
+            }
+            #sidemenu a:hover{
+                background-color: gray;
+            }
+            #sidemenu{
+                grid-area: a;
+                background-color: #333;
+                width: 24vw;
+                height: 100%;
+            }
+            #sidemenu a{
+                color: white;
+                text-decoration: none;
+                padding: 15px;
+                display: block;
+                text-align: center;
+            }
+            #maincontent{
+                background-color: white;
+                width: 80%;
+                height: 90vh;
+                float: right;
+            }
+            .footer{
+                grid-area: d;
+                background-color: white;
+                color: black;
+                width: 75vw;
+                height:5vh;
+                float:right;
+                text-align: center;
+            }
+            #h1{
+                grid-area: b;
+                height: 10vh;
+                width: 75vw;
+                text-align: left;
+                font-size: xxx-large;
+                font-weight: bold;
+                display: flex;
+                align-items: center;
+                color: rgb(0, 0, 0);
+
+            }
+            .information{
+                grid-area: c;
+                height:80vh;
+                text-align: left;
+                color: darkslateblue;
+                padding-left: 10px;
+                font-size: x-large;
+            }
+            .img{
+                float:left;
+                padding-right: 15px;
+            }
+            .imgright{
+                float:right;
+                padding-left: 15px;
+                padding-right: 35px;
+            }
+            
+        </style>
+    </head>
+    <body>
+    <div class="content">
+        <div id="sidemenu">
+            <ul>
+                <BR>
+                {% if session.get('user') %}
+                <li style="font-size: x-large; color: white;"> <a href="{{ url_for('logout') }}"> {{ session.get('user') }} <BR><BR> <img height="100px" src="/static/images/PersonIcon.png"> </a></li>
+                {% else %}
+                <li style="font-size: x-large; color: white;"> <a href="login"> Login <BR><BR> <img height="100px" src="/static/images/PersonIcon.png"> </a></li>
+                {% endif %}
+                {% if session.get('role') == 'faculty' %}
+                <li> <a href="/new_account">New Account</a> </li>
+                {% endif %}
+                <li> <a href="/">Index</a> </li>
+                <li> <a href="/faculty_update" style="background-color: white; color:#333">Faculty Update</a> </li>
+                <li> <a href="/student_edit">Student Edit</a> </li>
+            </ul>
+        </div>
+
+        <div id="h1">
+            Faculty Update
+        </div>
+
+        <div class="information">
+            <div class="img">
+                <body>
+                    <h2>Faculty Actions</h2>
+                    <form method="post" action="{{ url_for('faculty_update') }}">
+                        <label>Search student (username or bluegoldID):</label>
+                        <input name="target" />
+                        <button type="submit" name="action" value="search">Search</button>
+                        <br />
+                        {% if student %}
+                            <h3>Student: {{ student['username'] }} ({{ student['name'] }})</h3>
+                            <label>GPA:</label>
+                            <input name="gpa" value="{{ student['gpa'] }}" />
+                            <label>Total credits:</label>
+                            <input name="total_credits" value="{{ student['total_credits'] }}" />
+                            <button type="submit" name="action" value="update_academic">Update Academics</button>
+                            <br />
+                            <label>Charge amount ($):</label>
+                            <input name="amount" />
+                            <button type="submit" name="action" value="charge_tuition">Charge Tuition</button>
+                        {% endif %}
+                    </form>
+                
+                </body>
+            </div>
+            
+            <div class="imgright">
+                <h3>Recent transactions</h3>
+                {% if transactions %}
+                    <ul>
+                    {% for t in transactions %}
+                        <li>[{{ t['timestamp'] }}] {{ t['actor_username'] }} - {{ t['action'] }} - {{ t['details'] }}</li>
+                    {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No recent transactions.</p>
+                {% endif %}
+            </div>
+            
+        </div>
+
+       <footer class="footer">
+        <p> </p>
+       </footer>
+    </div>
+    </body>
 </html>
