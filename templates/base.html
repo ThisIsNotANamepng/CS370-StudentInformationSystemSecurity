@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>{{ title or 'SIS' }}</title>
+    <link rel="icon" type="image/x-icon" href="/static/images/PersonIcon.png">
+    <style>
+      :root{ --accent:#2b6cb0; --muted:#f3f4f6; --dark:#333 }
+      *{box-sizing:border-box}
+      body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; margin:0; background:var(--muted); color:#111}
+      .container{display:flex; min-height:100vh}
+      nav{width:220px; background:var(--dark); color:#fff; padding:20px}
+      nav a{display:block; color:#fff; text-decoration:none; margin:8px 0; padding:8px; border-radius:6px}
+      nav a.active{background:#fff;color:var(--dark)}
+      main{flex:1; padding:28px}
+      header{display:flex; justify-content:space-between; align-items:center; margin-bottom:18px}
+      .card{background:#fff; padding:18px; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.06)}
+      form input, form button{padding:8px 10px; margin:6px 0}
+      .flash{padding:10px;border-radius:6px;margin-bottom:12px}
+      .flash.success{background:#ecfdf5;color:#065f46}
+      .flash.danger{background:#ffe4e6;color:#9f1239}
+      .flash.warning{background:#fff7ed;color:#92400e}
+      .muted{color:#666;font-size:0.9rem}
+      table{width:100%;border-collapse:collapse}
+      table td, table th{padding:8px;border-bottom:1px solid #eee}
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <nav>
+        <div style="font-weight:700;margin-bottom:12px">SIS</div>
+        {% if user %}
+          <div class="muted">Signed in as</div>
+          <div style="font-weight:600;margin-bottom:12px">{{ user }} <span class="muted">({{ role }})</span></div>
+          <a href="{{ url_for('logout') }}">Logout</a>
+        {% else %}
+          <a href="{{ url_for('login') }}">Login</a>
+        {% endif %}
+
+        <hr style="border:none;height:1px;background:#444;margin:12px 0">
+        <a href="{{ url_for('index') }}" class="{% if request.endpoint=='index' %}active{% endif %}">Home</a>
+        {% if role == 'faculty' %}
+          <a href="{{ url_for('new_account') }}" class="{% if request.endpoint=='new_account' %}active{% endif %}">New Student</a>
+          <a href="{{ url_for('faculty_update') }}" class="{% if request.endpoint=='faculty_update' %}active{% endif %}">Faculty Update</a>
+          <a href="{{ url_for('transactions') }}">Transactions</a>
+        {% elif role == 'student' %}
+          <a href="{{ url_for('student_edit') }}" class="{% if request.endpoint=='student_edit' %}active{% endif %}">My Profile</a>
+          <a href="{{ url_for('transactions') }}">My Activity</a>
+        {% endif %}
+      </nav>
+      <main>
+        <header>
+          <h1 style="margin:0">{{ title or 'Dashboard' }}</h1>
+          <div class="muted">{{ subtitle or '' }}</div>
+        </header>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, msg in messages %}
+              <div class="flash {{ category }}">{{ msg }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </body>
+</html>

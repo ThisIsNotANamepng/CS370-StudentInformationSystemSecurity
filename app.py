@@ -113,6 +113,12 @@ def create_faculty_account(username: str, password: str, actor: str = 'system') 
         conn.close()
 
 
+@app.context_processor
+def inject_user_role():
+    # make user and role available to all templates as variables `user` and `role`
+    return dict(user=session.get('user'), role=session.get('role'))
+
+
 @app.route('/')
 def index():
     user = session.get('user')
@@ -165,21 +171,32 @@ def new_account():
         # Not logged in users should log in first
         return redirect(url_for('login'))
     if request.method == 'POST':
+        # enforce only faculty can create student accounts
+        if session.get('role') != 'faculty':
+            flash('Only faculty can create new student accounts.', 'danger')
+            return redirect(url_for('index'))
 
-        #if session.get('role') != 'faculty':
-        #    flash('Only faculty can create new student accounts.', 'danger')
-        #    return redirect(url_for('login'))
-
-        username = request.form.get('username')
-        password = request.form.get('password')
-        name = request.form.get('name')
-        bluegold = request.form.get('bluegoldID')
-        phone = request.form.get('phone')
-        address = request.form.get('address')
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '')
+        name = request.form.get('name', '').strip()
+        bluegold = request.form.get('bluegoldID', '').strip()
+        phone = request.form.get('phone', '').strip()
+        address = request.form.get('address', '').strip()
 
         if not username or not password:
             flash('Username and password are required', 'danger')
             return redirect(url_for('new_account'))
+
+        # Validate phone: must be exactly 10 digits
+        if not phone.isdigit() or len(phone) != 10:
+            flash('Phone number must be exactly 10 digits (numbers only).', 'danger')
+            return redirect(url_for('new_account'))
+
+        # Validate Bluegold ID: if provided, must be exactly 7 digits
+        if bluegold:
+            if not bluegold.isdigit() or len(bluegold) != 7:
+                flash('Bluegold ID must be exactly 7 digits (numbers only).', 'danger')
+                return redirect(url_for('new_account'))
 
         hashed = generate_password_hash(password)
         conn = get_db_connection()
@@ -221,6 +238,11 @@ def student_edit():
         name = request.form.get('name')
         address = request.form.get('address')
         phone = request.form.get('phone')
+        # Basic validation for phone when student updates their profile
+        if phone and (not phone.isdigit() or len(phone) != 10):
+            flash('Phone must be exactly 10 digits.', 'danger')
+            conn.close()
+            return redirect(url_for('student_edit'))
         # Students cannot modify GPA, credits, or balance
         c.execute('UPDATE students SET name = ?, address = ?, phone = ?, updated_at = ? WHERE username = ?',
                   (name, address, phone, datetime.utcnow().isoformat(), username))
@@ -252,13 +274,23 @@ def faculty_update():
     c = conn.cursor()
     student = None
     transactions = []
+    students = []
 
     if request.method == 'POST':
         action = request.form.get('action')
         target = request.form.get('target')
-        # target can be username or bluegoldID
-        # find student by username or bluegoldID
-        c.execute('SELECT * FROM students WHERE username = ? OR bluegoldID = ?', (target, target))
+        student_id = request.form.get('student_id')
+        # If a student_id is provided prefer it (hidden input in the form) to avoid ambiguous/empty target
+        if student_id:
+            try:
+                sid = int(student_id)
+                c.execute('SELECT * FROM students WHERE id = ?', (sid,))
+            except Exception:
+                c.execute('SELECT * FROM students WHERE username = ? OR bluegoldID = ?', (target, target))
+        else:
+            # target can be username or bluegoldID
+            # find student by username or bluegoldID
+            c.execute('SELECT * FROM students WHERE username = ? OR bluegoldID = ?', (target, target))
         student = c.fetchone()
 
         if action == 'search':
@@ -269,34 +301,81 @@ def faculty_update():
         elif action == 'update_academic' and student:
             gpa = request.form.get('gpa')
             credits = request.form.get('total_credits')
-            c.execute('UPDATE students SET gpa = ?, total_credits = ?, updated_at = ? WHERE id = ?',
-                      (float(gpa) if gpa else 0.0, int(credits) if credits else 0, datetime.utcnow().isoformat(), student['id']))
-            conn.commit()
-            log_transaction(session['user'], 'update_academic', f'Updated {student["username"]} GPA={gpa} credits={credits}')
-            flash('Academic record updated', 'success')
-            c.execute('SELECT * FROM students WHERE id = ?', (student['id'],))
-            student = c.fetchone()
+            # validate GPA and credits
+            try:
+                gpa_val = float(gpa) if gpa != '' and gpa is not None else 0.0
+            except ValueError:
+                flash('Invalid GPA value', 'danger')
+                gpa_val = None
+            try:
+                credits_val = int(credits) if credits != '' and credits is not None else 0
+            except ValueError:
+                flash('Invalid credits value', 'danger')
+                credits_val = None
+
+            if gpa_val is None or credits_val is None:
+                pass
+            elif not (0.0 <= gpa_val <= 4.0):
+                flash('GPA must be between 0.0 and 4.0', 'danger')
+            elif credits_val < 0:
+                flash('Credits must be non-negative', 'danger')
+            else:
+                c.execute('UPDATE students SET gpa = ?, total_credits = ?, updated_at = ? WHERE id = ?',
+                          (gpa_val, credits_val, datetime.utcnow().isoformat(), student['id']))
+                conn.commit()
+                log_transaction(session['user'], 'update_academic', f'Updated {student["username"]} GPA={gpa_val} credits={credits_val}')
+                flash('Academic record updated', 'success')
+                c.execute('SELECT * FROM students WHERE id = ?', (student['id'],))
+                student = c.fetchone()
         elif action == 'charge_tuition' and student:
-            amount = float(request.form.get('amount') or 0.0)
-            new_balance = (student['balance'] or 0.0) + amount
-            c.execute('UPDATE students SET balance = ?, updated_at = ? WHERE id = ?',
-                      (new_balance, datetime.utcnow().isoformat(), student['id']))
-            conn.commit()
-            log_transaction(session['user'], 'charge_tuition', f'Charged {amount} to {student["username"]}, balance now {new_balance}')
-            flash(f'Charged ${amount:.2f} to {student["username"]}', 'success')
-            c.execute('SELECT * FROM students WHERE id = ?', (student['id'],))
-            student = c.fetchone()
+            amount_raw = request.form.get('amount') or '0'
+            try:
+                amount = float(amount_raw)
+            except ValueError:
+                flash('Invalid amount', 'danger')
+                amount = None
+
+            if amount is not None:
+                new_balance = (student['balance'] or 0.0) + amount
+                c.execute('UPDATE students SET balance = ?, updated_at = ? WHERE id = ?',
+                          (new_balance, datetime.utcnow().isoformat(), student['id']))
+                conn.commit()
+                log_transaction(session['user'], 'charge_tuition', f'Charged {amount} to {student["username"]}, balance now {new_balance}')
+                flash(f'Charged ${amount:.2f} to {student["username"]}', 'success')
+                c.execute('SELECT * FROM students WHERE id = ?', (student['id'],))
+                student = c.fetchone()
+        elif action == 'set_balance' and student:
+            new_balance_raw = request.form.get('new_balance')
+            try:
+                new_balance = float(new_balance_raw)
+                c.execute('UPDATE students SET balance = ?, updated_at = ? WHERE id = ?',
+                          (new_balance, datetime.utcnow().isoformat(), student['id']))
+                conn.commit()
+                log_transaction(session['user'], 'set_balance', f'Set balance for {student["username"]} to {new_balance}')
+                flash(f'Balance updated to ${new_balance:.2f}', 'success')
+                c.execute('SELECT * FROM students WHERE id = ?', (student['id'],))
+                student = c.fetchone()
+            except (ValueError, TypeError):
+                flash('Invalid balance value', 'danger')
+        elif action == 'list':
+            # show a list of students (handled below by querying all students)
+            pass
 
     # load recent transactions
     c.execute('SELECT * FROM transactions ORDER BY timestamp DESC LIMIT 100')
     transactions = c.fetchall()
+
+    # if faculty wants to list students, or in general show a small roster, fetch students
+    c.execute('SELECT * FROM students ORDER BY username LIMIT 200')
+    students = c.fetchall()
+
     conn.close()
 
-    return render_template('faculty_update.html', student=student, transactions=transactions)
+    return render_template('faculty_update.html', student=student, transactions=transactions, students=students)
 
 
 @app.route('/transactions')
-def view_transactions():
+def transactions():
     if 'user' not in session:
         return redirect(url_for('login'))
     conn = get_db_connection()

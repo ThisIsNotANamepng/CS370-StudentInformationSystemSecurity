@@ -1,27 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <title>Transactions</title>
-    </head>
-    <body>
-        <h1>Transactions / Audit Log</h1>
-        <p>
-            <a href="{{ url_for('index') }}">Home</a>
-            {% if session.get('user') %}
-                | <a href="{{ url_for('logout') }}">Logout ({{ session.get('user') }})</a>
-            {% else %}
-                | <a href="{{ url_for('login') }}">Login</a>
-            {% endif %}
-            {% if session.get('role') == 'faculty' %}
-                | <a href="{{ url_for('new_account') }}">New Account</a>
-                | <a href="{{ url_for('faculty_update') }}">Faculty Update</a>
-            {% endif %}
-        </p>
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="card">
+        <h2>Transactions / Audit Log</h2>
         <ul>
-        {% for t in transactions %}
-            <li>[{{ t['timestamp'] }}] {{ t['actor_username'] }} - {{ t['action'] }} - {{ t['details'] }}</li>
-        {% endfor %}
+            {% for t in transactions %}
+                <li class="muted">[{{ t['timestamp'] }}] <strong>{{ t['actor_username'] }}</strong> — {{ t['action'] }} — {{ t['details'] }}</li>
+            {% endfor %}
         </ul>
-    </body>
-</html>
+    </div>
+{% endblock %}

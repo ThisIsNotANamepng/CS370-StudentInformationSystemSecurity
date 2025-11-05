@@ -1,158 +1,25 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <link rel="icon" type="image/x-icon" href="/static/images/PersonIcon.png">
-        <meta charset="utf-8">
-        <style>
-            *{
-                margin:0;
-                padding:0;
-                font-family:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
-            }
-            .content{
-                height: 100vh;
-                width: 100vw;
-                text-align: center;
-                display: grid;
-                grid-gap: 1vw;
-                grid-template-areas: 
-                "a b"
-                "a c"
-                "a d";
-            }
-            #sidemenu a:hover{
-                background-color: gray;
-            }
-            #sidemenu{
-                grid-area: a;
-                background-color: #333;
-                width: 24vw;
-                height: 100%;
-            }
-            #sidemenu a{
-                color: white;
-                text-decoration: none;
-                padding: 15px;
-                display: block;
-                text-align: center;
-            }
-            #maincontent{
-                background-color: white;
-                width: 80%;
-                height: 90vh;
-                float: right;
-            }
-            .footer{
-                grid-area: d;
-                background-color: white;
-                color: black;
-                width: 75vw;
-                height:5vh;
-                float:right;
-                text-align: center;
-            }
-            #h1{
-                grid-area: b;
-                height: 10vh;
-                width: 75vw;
-                text-align: left;
-                font-size: xxx-large;
-                font-weight: bold;
-                display: flex;
-                align-items: center;
-                color: rgb(0, 0, 0);
+{% extends 'base.html' %}
 
-            }
-            .information{
-                grid-area: c;
-                height:80vh;
-                text-align: left;
-                color: darkslateblue;
-                padding-left: 10px;
-                font-size: x-large;
-            }
-            .img{
-                float:left;
-                padding-right: 15px;
-            }
-            .imgright{
-                float:right;
-                padding-left: 15px;
-                padding-right: 35px;
-            }
-            
-        </style>
-    </head>
-    <body>
-    <div class="content">
-        <div id="sidemenu">
-            <ul>
-                <BR>
-                {% if session.get('user') %}
-                <li style="font-size: x-large; color: white;"> <a href="{{ url_for('logout') }}"> {{ session.get('user') }} <BR><BR> <img height="100px" src="/static/images/PersonIcon.png"> </a></li>
-                {% else %}
-                <li style="font-size: x-large; color: white;"> <a href="login"> Login <BR><BR> <img height="100px" src="/static/images/PersonIcon.png"> </a></li>
-                {% endif %}
-                {% if session.get('role') == 'faculty' %}
-                <li> <a href="/new_account" style="background-color: white; color:#333">New Account</a> </li>
-                {% endif %}
-                <li> <a href="/">Index</a> </li>
-                <li> <a href="/faculty_update">Faculty Update</a> </li>
-                <li> <a href="/student_edit">Student Edit</a> </li>
-            </ul>
-        </div>
-
-        <div id="h1">
-            New Account (Faculty only)
-        </div>
-
-        <div class="information">
-            <div class="img">
-                <body>
-                    <form action="{{ url_for('new_account') }}" method="post">
-                        <div>
-                            <label for="username">Username:</label>
-                            <input type="text" id="username" name="username" required>
-                        </div>
-                        <div>
-                            <label for="password">Password:</label>
-                            <input type="password" id="password" name="password" required>
-                        </div>
-                        <div>
-                            <label for="name">Full name:</label>
-                            <input type="text" id="name" name="name">
-                        </div>
-                        <div>
-                            <label for="bluegoldID">Bluegold ID:</label>
-                            <input type="text" id="bluegoldID" name="bluegoldID">
-                        </div>
-                        <div>
-                            <label for="phone">Phone:</label>
-                            <input type="text" id="phone" name="phone">
-                        </div>
-                        <div>
-                            <label for="address">Address:</label>
-                            <input type="text" id="address" name="address">
-                        </div>
-                        <div>
-                            <button type="submit">Create Student Account</button>
-                        </div>
-                    </form>
-                
-                </body>
-            </div>
-            
-            <div class="imgright">
-                
-            </div>
-            
-            
-            
-        </div>
-
-       <footer class="footer">
-        <p> </p>
-       </footer>
-    </div>
-    </body>
-</html>
+{% block content %}
+  <div class="card" style="max-width:700px">
+    <h2>New Student Account</h2>
+    <p class="muted">Faculty only — create student accounts here.</p>
+    <form action="{{ url_for('new_account') }}" method="post">
+      <label>Username</label><br />
+      <input type="text" id="username" name="username" required style="width:100%"><br />
+      <label>Password</label><br />
+      <input type="password" id="password" name="password" required style="width:100%"><br />
+      <label>Full name</label><br />
+      <input type="text" id="name" name="name" style="width:100%"><br />
+  <label>Bluegold ID (7 digits)</label><br />
+  <input type="text" id="bluegoldID" name="bluegoldID" pattern="\d{7}" title="7 digits" style="width:100%"><br />
+      <label>Phone (10 digits)</label><br />
+      <input type="text" id="phone" name="phone" pattern="\d{10}" title="10 digits" style="width:100%"><br />
+      <label>Address</label><br />
+      <input type="text" id="address" name="address" style="width:100%"><br />
+      <div style="margin-top:10px">
+        <button type="submit">Create Student Account</button>
+      </div>
+    </form>
+  </div>
+{% endblock %}

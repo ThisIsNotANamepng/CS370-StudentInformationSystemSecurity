@@ -1,155 +1,84 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <link rel="icon" type="image/x-icon" href="/static/static/images/PersonIcon.png">
-        <meta charset="utf-8">
-        <style>
-            *{
-                margin:0;
-                padding:0;
-                font-family:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
-            }
-            .content{
-                height: 100vh;
-                width: 100vw;
-                text-align: center;
-                display: grid;
-                grid-gap: 1vw;
-                grid-template-areas: 
-                "a b"
-                "a c"
-                "a d";
-            }
-            #sidemenu a:hover{
-                background-color: gray;
-            }
-            #sidemenu{
-                grid-area: a;
-                background-color: #333;
-                width: 24vw;
-                height: 100%;
-            }
-            #sidemenu a{
-                color: white;
-                text-decoration: none;
-                padding: 15px;
-                display: block;
-                text-align: center;
-            }
-            #maincontent{
-                background-color: white;
-                width: 80%;
-                height: 90vh;
-                float: right;
-            }
-            .footer{
-                grid-area: d;
-                background-color: white;
-                color: black;
-                width: 75vw;
-                height:5vh;
-                float:right;
-                text-align: center;
-            }
-            #h1{
-                grid-area: b;
-                height: 10vh;
-                width: 75vw;
-                text-align: left;
-                font-size: xxx-large;
-                font-weight: bold;
-                display: flex;
-                align-items: center;
-                color: rgb(0, 0, 0);
+{% extends 'base.html' %}
 
-            }
-            .information{
-                grid-area: c;
-                height:80vh;
-                text-align: left;
-                color: darkslateblue;
-                padding-left: 10px;
-                font-size: x-large;
-            }
-            .img{
-                float:left;
-                padding-right: 15px;
-            }
-            .imgright{
-                float:right;
-                padding-left: 15px;
-                padding-right: 35px;
-            }
-            
-        </style>
-    </head>
-    <body>
-    <div class="content">
-        <div id="sidemenu">
-            <ul>
-                <BR>
-                {% if session.get('user') %}
-                <li style="font-size: x-large; color: white;"> <a href="{{ url_for('logout') }}"> {{ session.get('user') }} <BR><BR> <img height="100px" src="/static/images/PersonIcon.png"> </a></li>
-                {% else %}
-                <li style="font-size: x-large; color: white;"> <a href="login"> Login <BR><BR> <img height="100px" src="/static/images/PersonIcon.png"> </a></li>
-                {% endif %}
-                {% if session.get('role') == 'faculty' %}
-                <li> <a href="/new_account">New Account</a> </li>
-                {% endif %}
-                <li> <a href="/">Index</a> </li>
-                <li> <a href="/faculty_update" style="background-color: white; color:#333">Faculty Update</a> </li>
-                <li> <a href="/student_edit">Student Edit</a> </li>
-            </ul>
-        </div>
+{% block content %}
+    <div style="display:flex;gap:16px">
+        <div style="flex:1">
+            <div class="card">
+                <h3>Faculty Actions</h3>
+                <form method="post" action="{{ url_for('faculty_update') }}">
+                                        <label>Search student (username or bluegoldID):</label><br />
+                                        <input name="target" style="width:60%" value="{% if student %}{{ student['username'] }}{% endif %}" />
+                                        {% if student %}
+                                            <input type="hidden" name="student_id" value="{{ student['id'] }}" />
+                                        {% endif %}
+                    <button type="submit" name="action" value="search">Search</button>
+                    <button type="submit" name="action" value="list" style="margin-left:8px">List All Students</button>
 
-        <div id="h1">
-            Faculty Update
-        </div>
-
-        <div class="information">
-            <div class="img">
-                <body>
-                    <h2>Faculty Actions</h2>
-                    <form method="post" action="{{ url_for('faculty_update') }}">
-                        <label>Search student (username or bluegoldID):</label>
-                        <input name="target" />
-                        <button type="submit" name="action" value="search">Search</button>
-                        <br />
-                        {% if student %}
-                            <h3>Student: {{ student['username'] }} ({{ student['name'] }})</h3>
-                            <label>GPA:</label>
-                            <input name="gpa" value="{{ student['gpa'] }}" />
-                            <label>Total credits:</label>
-                            <input name="total_credits" value="{{ student['total_credits'] }}" />
+                    {% if student %}
+                        <hr />
+                        <h4>Student: {{ student['username'] }} — {{ student['name'] }}</h4>
+                        <p class="muted">Last updated: {{ student['updated_at'] }}</p>
+                        <label>GPA</label><br />
+                        <input name="gpa" value="{{ student['gpa'] }}" style="width:120px" />
+                        <label style="margin-left:8px">Total credits</label>
+                        <input name="total_credits" value="{{ student['total_credits'] }}" style="width:120px" />
+                        <div style="margin-top:8px">
                             <button type="submit" name="action" value="update_academic">Update Academics</button>
-                            <br />
-                            <label>Charge amount ($):</label>
-                            <input name="amount" />
-                            <button type="submit" name="action" value="charge_tuition">Charge Tuition</button>
-                        {% endif %}
-                    </form>
-                
-                </body>
+                        </div>
+
+                        <hr />
+                        <p>Balance: ${{ '%.2f'|format(student['balance'] or 0.0) }}</p>
+                        <label>Charge amount ($)</label>
+                        <input name="amount" style="width:120px" />
+                        <button type="submit" name="action" value="charge_tuition">Charge</button>
+
+                        <div style="margin-top:8px">
+                            <label>Set absolute balance ($)</label>
+                            <input name="new_balance" style="width:120px" />
+                            <button type="submit" name="action" value="set_balance">Set Balance</button>
+                        </div>
+                    {% endif %}
+                </form>
             </div>
-            
-            <div class="imgright">
+
+            <div class="card" style="margin-top:12px">
+                <h3>Students</h3>
+                {% if request.method=='POST' and not student %}
+                    <p class="muted">No student selected.</p>
+                {% endif %}
+                {% if students %}
+                    <table>
+                        <thead><tr><th>Username</th><th>Name</th><th>GPA</th><th>Balance</th></tr></thead>
+                        <tbody>
+                            {% for s in students %}
+                                <tr>
+                                    <td>{{ s['username'] }}</td>
+                                    <td>{{ s['name'] or '' }}</td>
+                                    <td>{{ s['gpa'] }}</td>
+                                    <td>${{ '%.2f'|format(s['balance'] or 0.0) }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p class="muted">No students found.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div style="width:360px">
+            <div class="card">
                 <h3>Recent transactions</h3>
                 {% if transactions %}
                     <ul>
                     {% for t in transactions %}
-                        <li>[{{ t['timestamp'] }}] {{ t['actor_username'] }} - {{ t['action'] }} - {{ t['details'] }}</li>
+                        <li class="muted">[{{ t['timestamp'] }}] <strong>{{ t['actor_username'] }}</strong> — {{ t['action'] }} — {{ t['details'] }}</li>
                     {% endfor %}
                     </ul>
                 {% else %}
-                    <p>No recent transactions.</p>
+                    <p class="muted">No recent transactions.</p>
                 {% endif %}
             </div>
-            
         </div>
-
-       <footer class="footer">
-        <p> </p>
-       </footer>
     </div>
-    </body>
-</html>
+{% endblock %}
